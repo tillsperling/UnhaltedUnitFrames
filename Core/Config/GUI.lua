@@ -699,40 +699,40 @@ local function CreateFrameSettings(containerParent, unit, unitHasParent, updateC
         AnchorToCooldownViewerToggle:SetLabel("Anchor To Cooldown Viewer")
         AnchorToCooldownViewerToggle:SetValue(HealthBarDB.AnchorToCooldownViewer)
         AnchorToCooldownViewerToggle:SetCallback("OnValueChanged",
-        function(_, _, value)
-            HealthBarDB.AnchorToCooldownViewer = value
-            if not value then
-                FrameDB.Layout[1] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[1]
-                FrameDB.Layout[2] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[2]
-                FrameDB.Layout[3] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[3]
-                FrameDB.Layout[4] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[4]
-                AnchorFromDropdown:SetValue(FrameDB.Layout[1])
-                AnchorToDropdown:SetValue(FrameDB.Layout[2])
-                XPosSlider:SetValue(FrameDB.Layout[3])
-                YPosSlider:SetValue(FrameDB.Layout[4])
-            else
-                if unit == "player" then
-                    FrameDB.Layout[1] = "RIGHT"
-                    FrameDB.Layout[2] = "LEFT"
-                    FrameDB.Layout[3] = 0
-                    FrameDB.Layout[4] = 0
-                    AnchorFromDropdown:SetValue(FrameDB.Layout[1])
-                    AnchorToDropdown:SetValue(FrameDB.Layout[2])
-                    XPosSlider:SetValue(FrameDB.Layout[3])
-                    YPosSlider:SetValue(FrameDB.Layout[4])
-                elseif unit == "target" then
-                    FrameDB.Layout[1] = "LEFT"
-                    FrameDB.Layout[2] = "RIGHT"
-                    FrameDB.Layout[3] = 0
-                    FrameDB.Layout[4] = 0
-                    AnchorFromDropdown:SetValue(FrameDB.Layout[1])
-                    AnchorToDropdown:SetValue(FrameDB.Layout[2])
-                    XPosSlider:SetValue(FrameDB.Layout[3])
-                    YPosSlider:SetValue(FrameDB.Layout[4])
-                end
-            end
-            updateCallback()
-        end)
+                function(_, _, value)
+                    HealthBarDB.AnchorToCooldownViewer = value
+                    if not value then
+                        FrameDB.Layout[1] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[1]
+                        FrameDB.Layout[2] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[2]
+                        FrameDB.Layout[3] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[3]
+                        FrameDB.Layout[4] = UUF:GetDefaultDB().profile.Units[unit].Frame.Layout[4]
+                        AnchorFromDropdown:SetValue(FrameDB.Layout[1])
+                        AnchorToDropdown:SetValue(FrameDB.Layout[2])
+                        XPosSlider:SetValue(FrameDB.Layout[3])
+                        YPosSlider:SetValue(FrameDB.Layout[4])
+                    else
+                        if unit == "player" then
+                            FrameDB.Layout[1] = "RIGHT"
+                            FrameDB.Layout[2] = "LEFT"
+                            FrameDB.Layout[3] = 0
+                            FrameDB.Layout[4] = 0
+                            AnchorFromDropdown:SetValue(FrameDB.Layout[1])
+                            AnchorToDropdown:SetValue(FrameDB.Layout[2])
+                            XPosSlider:SetValue(FrameDB.Layout[3])
+                            YPosSlider:SetValue(FrameDB.Layout[4])
+                        elseif unit == "target" then
+                            FrameDB.Layout[1] = "LEFT"
+                            FrameDB.Layout[2] = "RIGHT"
+                            FrameDB.Layout[3] = 0
+                            FrameDB.Layout[4] = 0
+                            AnchorFromDropdown:SetValue(FrameDB.Layout[1])
+                            AnchorToDropdown:SetValue(FrameDB.Layout[2])
+                            XPosSlider:SetValue(FrameDB.Layout[3])
+                            YPosSlider:SetValue(FrameDB.Layout[4])
+                        end
+                    end
+                    updateCallback()
+                end)
         AnchorToCooldownViewerToggle:SetCallback("OnEnter", function() GameTooltip:SetOwner(AnchorToCooldownViewerToggle.frame, "ANCHOR_CURSOR") GameTooltip:AddLine("Anchor To |cFF8080FFEssential|r Cooldown Viewer. Toggling this will overwrite existing |cFF8080FFLayout|r Settings.", 1, 1, 1, false) GameTooltip:Show() end)
         AnchorToCooldownViewerToggle:SetCallback("OnLeave", function() GameTooltip:Hide() end)
         AnchorToCooldownViewerToggle:SetRelativeWidth(0.25)
@@ -946,6 +946,36 @@ local function CreateCastBarBarSettings(containerParent, unit, updateCallback)
     MatchParentWidthToggle:SetRelativeWidth(0.33)
     LayoutContainer:AddChild(MatchParentWidthToggle)
 
+    local AnchorToCooldownViewerToggle
+    if unit == "player" then
+        AnchorToCooldownViewerToggle = AG:Create("CheckBox")
+        AnchorToCooldownViewerToggle:SetLabel("Anchor To Cooldown Viewer")
+        AnchorToCooldownViewerToggle:SetValue(CastBarDB.AnchorToCooldownViewer and true or false)
+        AnchorToCooldownViewerToggle:SetCallback("OnValueChanged", function(_, _, value)
+            CastBarDB.AnchorToCooldownViewer = value
+            updateCallback()
+            RefreshCastBarBarSettings()
+        end)
+        AnchorToCooldownViewerToggle:SetCallback("OnEnter", function() GameTooltip:SetOwner(AnchorToCooldownViewerToggle.frame, "ANCHOR_CURSOR") GameTooltip:AddLine("Anchor To |cFF8080FFEssential|r Cooldown Viewer.", 1, 1, 1, false) GameTooltip:Show() end)
+        AnchorToCooldownViewerToggle:SetCallback("OnLeave", function() GameTooltip:Hide() end)
+        AnchorToCooldownViewerToggle:SetRelativeWidth(0.33)
+        LayoutContainer:AddChild(AnchorToCooldownViewerToggle)
+    end
+
+    local MatchCooldownViewerWidthToggle
+    if unit == "player" then
+        MatchCooldownViewerWidthToggle = AG:Create("CheckBox")
+        MatchCooldownViewerWidthToggle:SetLabel("Match Cooldown Viewer Width")
+        MatchCooldownViewerWidthToggle:SetValue(CastBarDB.MatchCooldownViewerWidth and true or false)
+        MatchCooldownViewerWidthToggle:SetCallback("OnValueChanged", function(_, _, value)
+            CastBarDB.MatchCooldownViewerWidth = value
+            updateCallback()
+            RefreshCastBarBarSettings()
+        end)
+        MatchCooldownViewerWidthToggle:SetRelativeWidth(0.33)
+        LayoutContainer:AddChild(MatchCooldownViewerWidthToggle)
+    end
+
     local InverseGrowthDirectionToggle = AG:Create("CheckBox")
     InverseGrowthDirectionToggle:SetLabel("Inverse Growth Direction")
     InverseGrowthDirectionToggle:SetValue(CastBarDB.Inverse)
@@ -1041,12 +1071,15 @@ local function CreateCastBarBarSettings(containerParent, unit, updateCallback)
     function RefreshCastBarBarSettings()
         if CastBarDB.Enabled then
             MatchParentWidthToggle:SetDisabled(false)
-            WidthSlider:SetDisabled(CastBarDB.MatchParentWidth)
+            local isMatchingCooldownWidth = unit == "player" and CastBarDB.AnchorToCooldownViewer and CastBarDB.MatchCooldownViewerWidth
+            WidthSlider:SetDisabled(CastBarDB.MatchParentWidth or isMatchingCooldownWidth)
             HeightSlider:SetDisabled(false)
             AnchorFromDropdown:SetDisabled(false)
             AnchorToDropdown:SetDisabled(false)
             XPosSlider:SetDisabled(false)
             YPosSlider:SetDisabled(false)
+            if AnchorToCooldownViewerToggle then AnchorToCooldownViewerToggle:SetDisabled(false) end
+            if MatchCooldownViewerWidthToggle then MatchCooldownViewerWidthToggle:SetDisabled(not CastBarDB.AnchorToCooldownViewer) end
             ForegroundColourPicker:SetDisabled(CastBarDB.ColourByClass)
             BackgroundColourPicker:SetDisabled(false)
             NotInterruptibleColourPicker:SetDisabled(false)
@@ -1058,6 +1091,8 @@ local function CreateCastBarBarSettings(containerParent, unit, updateCallback)
             AnchorToDropdown:SetDisabled(true)
             XPosSlider:SetDisabled(true)
             YPosSlider:SetDisabled(true)
+            if AnchorToCooldownViewerToggle then AnchorToCooldownViewerToggle:SetDisabled(true) end
+            if MatchCooldownViewerWidthToggle then MatchCooldownViewerWidthToggle:SetDisabled(true) end
             ForegroundColourPicker:SetDisabled(true)
             BackgroundColourPicker:SetDisabled(true)
             NotInterruptibleColourPicker:SetDisabled(true)
@@ -1195,7 +1230,7 @@ local function CreateCastBarDurationTextSettings(containerParent, unit, updateCa
     local CastBarTextDB = UUF.db.profile.Units[unit].CastBar.Text
     local DurationTextDB = CastBarTextDB.Duration
 
-     local DurationContainer = GUIWidgets.CreateInlineGroup(containerParent, "Duration Settings")
+    local DurationContainer = GUIWidgets.CreateInlineGroup(containerParent, "Duration Settings")
 
     local DurationToggle = AG:Create("CheckBox")
     DurationToggle:SetLabel("Enable |cFF8080FFDuration Text|r")
@@ -2812,7 +2847,7 @@ local function CreateUnitSettings(containerParent, unit)
     EnableUnitFrameToggle:SetLabel("Hide Blizzard |cFFFFCC00"..(UnitDBToUnitPrettyName[unit] or unit) .."|r")
     EnableUnitFrameToggle:SetValue(UUF.db.profile.Units[unit].ForceHideBlizzard)
     EnableUnitFrameToggle:SetCallback("OnValueChanged", function(_, _, value)
-            StaticPopupDialogs["UUF_RELOAD_UI"] = {
+        StaticPopupDialogs["UUF_RELOAD_UI"] = {
             text = "You must reload to apply this change, do you want to reload now?",
             button1 = "Reload Now",
             button2 = "Later",

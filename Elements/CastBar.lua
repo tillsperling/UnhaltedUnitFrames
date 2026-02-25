@@ -8,6 +8,29 @@ local function ShortenCastName(text, maxChars)
     return UUF:CleanTruncateUTF8String(text)
 end
 
+local function GetCastBarAnchorParent(unitFrame, unit, castBarDB)
+    if unit == "player" and castBarDB.AnchorToCooldownViewer then
+        local cooldownViewerAnchor = _G["UUF_CDMAnchor"] or _G["EssentialCooldownViewer"]
+        if cooldownViewerAnchor and cooldownViewerAnchor:IsShown() then
+            return cooldownViewerAnchor
+        end
+    end
+    return unitFrame
+end
+
+local function GetCastBarWidth(frameDB, castBarDB, anchorParent)
+    if castBarDB.MatchCooldownViewerWidth then
+        local anchorWidth = anchorParent and anchorParent:GetWidth()
+        if anchorWidth and anchorWidth > 0 then
+            return anchorWidth
+        end
+    end
+    if castBarDB.MatchParentWidth then
+        return frameDB.Width
+    end
+    return castBarDB.Width
+end
+
 function UUF:CreateUnitCastBar(unitFrame, unit)
     local FontDB = UUF.db.profile.General.Fonts
     local GeneralDB = UUF.db.profile.General
@@ -21,8 +44,9 @@ function UUF:CreateUnitCastBar(unitFrame, unit)
     CastBarContainer:SetBackdropColor(0, 0, 0, 0)
     CastBarContainer:SetBackdropBorderColor(0, 0, 0, 1)
     CastBarContainer:ClearAllPoints()
-    CastBarContainer:SetPoint(CastBarDB.Layout[1], unitFrame, CastBarDB.Layout[2], CastBarDB.Layout[3], CastBarDB.Layout[4])
-    if CastBarDB.MatchParentWidth then CastBarContainer:SetWidth(FrameDB.Width) else CastBarContainer:SetWidth(CastBarDB.Width) end
+    local anchorParent = GetCastBarAnchorParent(unitFrame, unit, CastBarDB)
+    CastBarContainer:SetPoint(CastBarDB.Layout[1], anchorParent, CastBarDB.Layout[2], CastBarDB.Layout[3], CastBarDB.Layout[4])
+    CastBarContainer:SetWidth(GetCastBarWidth(FrameDB, CastBarDB, anchorParent))
     CastBarContainer:SetHeight(CastBarDB.Height)
     CastBarContainer:SetFrameStrata(CastBarDB.FrameStrata)
 
@@ -172,13 +196,14 @@ function UUF:UpdateUnitCastBar(unitFrame, unit)
         if not unitFrame:IsElementEnabled("Castbar") then unitFrame:EnableElement("Castbar") end
 
         if unitFrame.Castbar then
+            local anchorParent = GetCastBarAnchorParent(unitFrame, unit, CastBarDB)
             if CastBarContainer then CastBarContainer:ClearAllPoints() end
-            if CastBarContainer then CastBarContainer:SetPoint(CastBarDB.Layout[1], unitFrame, CastBarDB.Layout[2], CastBarDB.Layout[3], CastBarDB.Layout[4]) end
+            if CastBarContainer then CastBarContainer:SetPoint(CastBarDB.Layout[1], anchorParent, CastBarDB.Layout[2], CastBarDB.Layout[3], CastBarDB.Layout[4]) end
             if CastBarContainer then CastBarContainer:SetFrameStrata(CastBarDB.FrameStrata) end
             unitFrame.Castbar:ClearAllPoints()
             unitFrame.Castbar:SetPoint("TOPLEFT", CastBarContainer, "TOPLEFT", 1, -1)
             unitFrame.Castbar:SetPoint("BOTTOMRIGHT", CastBarContainer, "BOTTOMRIGHT", -1, 1)
-            if CastBarDB.MatchParentWidth then if CastBarContainer then CastBarContainer:SetWidth(FrameDB.Width) end else if CastBarContainer then CastBarContainer:SetWidth(CastBarDB.Width) end end
+            if CastBarContainer then CastBarContainer:SetWidth(GetCastBarWidth(FrameDB, CastBarDB, anchorParent)) end
             if CastBarContainer then CastBarContainer:SetHeight(CastBarDB.Height) end
             unitFrame.Castbar:SetStatusBarTexture(UUF.Media.Foreground)
             unitFrame.Castbar.Background:SetTexture(UUF.Media.Background)
