@@ -178,3 +178,117 @@ function UUF:ToggleUnitFrameVisibility(unit)
     (UnitDB.Enabled and RegisterUnitWatch or UnregisterUnitWatch)(unitFrame)
     unitFrame:SetShown(UnitDB.Enabled)
 end
+
+local function CanForceFrameVisible(unit)
+    if unit ~= "player" and unit ~= "target" then return true end
+    local UnitDB = UUF.db and UUF.db.profile and UUF.db.profile.Units and UUF.db.profile.Units[unit]
+    if not UnitDB or not UnitDB.HealthBar or not UnitDB.HealthBar.AnchorToCooldownViewer then return true end
+    -- If the external cooldown viewer intentionally hides while mounted, avoid forcing player/target visible.
+    return not IsMounted()
+end
+
+local function ReanchorUnitFrame(unit)
+    local unitFrame = UUF[unit:upper()]
+    local UnitDB = UUF.db.profile.Units[unit]
+    if not unitFrame or not UnitDB then return end
+
+    if unit == "player" or unit == "target" then
+        if UnitDB.HealthBar.AnchorToCooldownViewer and not _G["UUF_CDMAnchor"] and _G["EssentialCooldownViewer"] then
+            UUF:CreatePositionController()
+        end
+    end
+
+    local FrameDB = UnitDB.Frame
+    local parentFrame
+
+    if unit == "player" or unit == "target" then
+        parentFrame = UnitDB.HealthBar.AnchorToCooldownViewer and _G["UUF_CDMAnchor"] or UIParent
+    elseif unit == "targettarget" or unit == "focus" or unit == "focustarget" or unit == "pet" then
+        parentFrame = _G[FrameDB.AnchorParent] or UIParent
+    end
+
+    if parentFrame then
+        unitFrame:ClearAllPoints()
+        unitFrame:SetPoint(FrameDB.Layout[1], parentFrame, FrameDB.Layout[2], FrameDB.Layout[3], FrameDB.Layout[4])
+        unitFrame:SetSize(FrameDB.Width, FrameDB.Height)
+    end
+end
+
+function UUF:RevalidateUnitFrameVisibility()
+    if not UUF.db or not UUF.db.profile or not UUF.db.profile.Units then return end
+    if InCombatLockdown() then
+        UUF._deferredVisibilityRecovery = true
+        return
+    end
+
+    local function refreshUnit(unit)
+        local UnitDB = UUF.db.profile.Units[unit]
+        local unitFrame = UUF[unit:upper()]
+        if not UnitDB or not unitFrame then return end
+
+        if UnitDB.Enabled then
+            ReanchorUnitFrame(unit)
+            RegisterUnitWatch(unitFrame)
+            if UnitExists(unitFrame.unit) and not unitFrame:IsShown() and CanForceFrameVisible(unit) then
+                unitFrame:Show()
+            end
+        else
+            UnregisterUnitWatch(unitFrame)
+            unitFrame:Hide()
+        end
+    end
+
+    refreshUnit("player")
+    refreshUnit("target")
+    refreshUnit("targettarget")
+    refreshUnit("focus")
+    refreshUnit("focustarget")
+    refreshUnit("pet")
+
+    local bossDB = UUF.db.profile.Units.boss
+    if bossDB and bossDB.Enabled then
+        for i = 1, UUF.MAX_BOSS_FRAMES do
+            local bossFrame = UUF["BOSS" .. i]
+            if bossFrame then
+                RegisterUnitWatch(bossFrame)
+                if UnitExists(bossFrame.unit) and not bossFrame:IsShown() then
+                    bossFrame:Show()
+                end
+            end
+        end
+    elseif bossDB then
+        for i = 1, UUF.MAX_BOSS_FRAMES do
+            local bossFrame = UUF["BOSS" .. i]
+            if bossFrame then
+                UnregisterUnitWatch(bossFrame)
+                bossFrame:Hide()
+            end
+        end
+    end
+end
+
+function UUF:InitializeUnitFrameRecovery()
+    if UUF._unitFrameRecoveryHandler then return end
+
+    local recoveryHandler = CreateFrame("Frame")
+    recoveryHandler:RegisterEvent("PLAYER_ENTERING_WORLD")
+    recoveryHandler:RegisterEvent("UNIT_ENTERED_VEHICLE")
+    recoveryHandler:RegisterEvent("UNIT_EXITED_VEHICLE")
+    recoveryHandler:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+    recoveryHandler:RegisterEvent("PLAYER_REGEN_ENABLED")
+    recoveryHandler:SetScript("OnEvent", function(_, event, unit)
+        if (event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE") and unit ~= "player" then return end
+
+        if event == "PLAYER_REGEN_ENABLED" then
+            if not UUF._deferredVisibilityRecovery then return end
+            UUF._deferredVisibilityRecovery = nil
+        end
+
+        UUF:RevalidateUnitFrameVisibility()
+        C_Timer.After(0.2, function()
+            UUF:RevalidateUnitFrameVisibility()
+        end)
+    end)
+
+    UUF._unitFrameRecoveryHandler = recoveryHandler
+end
